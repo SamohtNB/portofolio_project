@@ -7,4 +7,5 @@ plotly
 requests
 folium
 streamlit_folium
-PIL
+seaborn
+missingno
