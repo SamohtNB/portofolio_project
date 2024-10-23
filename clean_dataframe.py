@@ -5,16 +5,12 @@ import streamlit as st
 def clean_data(data):
     data = data.dropna(axis=1, how='all')
     
-    cleaned_data = data.drop(columns=['codeEICResourceObject', 'codeIRIS', 'codeINSEECommune',
-        'codeEPCI', 'codeIRISCommuneImplantation',
-        'codeINSEECommuneImplantation', 'codeS3RENR'])
+    # Drop columns with more than 90% missing values
+    cleaned_data = data.dropna(thresh=0.9*len(data), axis=1)
+
     for col in cleaned_data.columns:
         if 'date' in col.lower():
-            cleaned_data[col] = pd.to_datetime(cleaned_data[col], errors='coerce')
+            cleaned_data[col] = pd.to_datetime(cleaned_data[col], dayfirst=True)
 
-    # Automatically convert numeric columns to the appropriate type
-    numeric_columns = cleaned_data.select_dtypes(include=['object']).columns
-    for col in numeric_columns:
-        # Attempt to convert to numeric, if conversion fails it remains as object
-        cleaned_data[col] = pd.to_numeric(cleaned_data[col], errors='coerce')
-
+    cleaned_data.to_csv('cleaned_data.csv', index=False)
+    return cleaned_data

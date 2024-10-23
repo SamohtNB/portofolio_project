@@ -4,8 +4,13 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt
 import seaborn as sns
-from clean_dataframe import clean_data
 import os
+import folium
+
+from streamlit_folium import st_folium
+from energy_map_creation import create_region_map
+from clean_dataframe import clean_data
+from create_co2_map import create_co2_map
 
 center_css = """
     <style>
@@ -23,7 +28,7 @@ st.set_page_config(page_title="Energy installation in France", page_icon="./imag
 st.markdown(center_css, unsafe_allow_html=True)
 
 
-data_url = "https://odre.opendatasoft.com/api/explore/v2.1/catalog/datasets/registre-national-installation-production-stockage-electricite-agrege/exports/csv?use_labels=true"
+data_url = "https://www.data.gouv.fr/fr/datasets/r/c14e5a7d-2ca6-4ad8-bc61-93889d13fc25"
 
 @st.cache_data
 def load_data():
@@ -31,16 +36,9 @@ def load_data():
     if os.path.exists(file_path):
         data = pd.read_csv(file_path)
     else:
-        data = pd.read_csv(data_url, sep=";")
+        data = pd.read_csv(data_url, sep=";", low_memory=False)
         cleaned_data = clean_data(data)
     return cleaned_data
-
-@st.cache_data
-def split_data(data):
-    mid_point = len(data.columns)//2
-    data1 = data.iloc[:, :mid_point]
-    data2 = data.iloc[:, mid_point:]
-    return data1, data2
 
 st.sidebar.title("Menu")
 page = st.sidebar.radio("Go to", ["Portfolio","Presentation","Raw data", "Data Visualization"])
@@ -132,15 +130,8 @@ elif page == "Data Visualization":
     st.subheader("let us check for missing values:")
     # present the missing values in the data with a 
     import missingno as msno
-    first_half, second_half = split_data(data)
     plt.figure(figsize=(10, 6))
-    msno.matrix(first_half)
-    plt.title("missing values in the first half of the data")
-    st.pyplot(plt)
-    
-    plt.figure(figsize=(10, 6))
-    msno.matrix(second_half)
-    plt.title("missing values in the second half of the data")
+    msno.matrix(data)
     st.pyplot(plt)
 
     st.markdown("""
@@ -154,28 +145,22 @@ elif page == "Data Visualization":
     sns.heatmap(data.corr(), annot=True, cmap="viridis")
     st.pyplot(plt)
     
+    st.subheader("let us check the distribution of the installed power by region:")
     plt.figure(figsize=(12, 8))
-    sns.boxplot(x='coderegion', y='puismaxinstallee', data=data)
+    sns.boxplot(x='codeRegion', y='puisMaxInstallee', data=data)
     plt.xticks(rotation=90)
     plt.title('Installed Power Distribution by Region')
     plt.xlabel('Region')
     plt.ylabel('Installed Power (MW)')
     st.pyplot(plt)
+    
 
-    data_sorted = data.sort_values('datemisemnservice_(format_date)')
-    plt.figure(figsize=(12, 6))
-    plt.plot(data_sorted['datemisemnservice_(format_date)'], data_sorted['energieannuelleglissanteproduite'], marker='o', linestyle='-')
-    plt.title('Evolution of Annual Energy Production Over Time')
-    plt.xlabel('Commissioning Date')
-    plt.ylabel('Annual Energy Production (MWh)')
-    st.pyplot(plt)
-
-    filiere_counts = data['filiere'].value_counts()
-    plt.figure(figsize=(8, 8))
-    plt.pie(filiere_counts, labels=filiere_counts.index, autopct='%1.1f%%', startangle=140)
-    plt.title('Distribution of Energy Types (Filière)')
-    st.pyplot(plt)
-
+    
+    selected_region = st.selectbox("Select a region", ["All"] + data['region'].unique().tolist())
+    st.subheader(f"Energy Installation in {selected_region}")
+    region_map = create_region_map(data, selected_region)
+    st_data = st_folium(region_map)
+    
 
 elif page == "Portfolio":
     st.title("About me")
