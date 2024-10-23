@@ -5,6 +5,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import seaborn as sns
 from clean_dataframe import clean_data
+import os
 
 center_css = """
     <style>
@@ -26,8 +27,12 @@ data_url = "https://odre.opendatasoft.com/api/explore/v2.1/catalog/datasets/regi
 
 @st.cache_data
 def load_data():
-    data = pd.read_csv(data_url, sep=";")
-    cleaned_data = clean_data(data)
+    file_path = "./cleaned_data.csv"
+    if os.path.exists(file_path):
+        data = pd.read_csv(file_path)
+    else:
+        data = pd.read_csv(data_url, sep=";")
+        cleaned_data = clean_data(data)
     return cleaned_data
 
 @st.cache_data
@@ -38,7 +43,7 @@ def split_data(data):
     return data1, data2
 
 st.sidebar.title("Menu")
-page = st.sidebar.radio("Go to", ["Presentation","Raw data", "Data Visualization", "About me"])
+page = st.sidebar.radio("Go to", ["Portfolio","Presentation","Raw data", "Data Visualization"])
 
 data = load_data()
 
@@ -149,17 +154,30 @@ elif page == "Data Visualization":
     sns.heatmap(data.corr(), annot=True, cmap="viridis")
     st.pyplot(plt)
     
-    st.markdown("""
-                we can observe a huge correlation betweeen puisMaxInstallee, and puisMaxRac.
-                
-                but we can also observe some columns that don't have any correlation or anti correlation, like debitMaximal, although it is not empty, far from it.
-                """)
+    plt.figure(figsize=(12, 8))
+    sns.boxplot(x='coderegion', y='puismaxinstallee', data=data)
+    plt.xticks(rotation=90)
+    plt.title('Installed Power Distribution by Region')
+    plt.xlabel('Region')
+    plt.ylabel('Installed Power (MW)')
+    st.pyplot(plt)
 
-    
-    
-    
-    
-elif page == "About me":
+    data_sorted = data.sort_values('datemisemnservice_(format_date)')
+    plt.figure(figsize=(12, 6))
+    plt.plot(data_sorted['datemisemnservice_(format_date)'], data_sorted['energieannuelleglissanteproduite'], marker='o', linestyle='-')
+    plt.title('Evolution of Annual Energy Production Over Time')
+    plt.xlabel('Commissioning Date')
+    plt.ylabel('Annual Energy Production (MWh)')
+    st.pyplot(plt)
+
+    filiere_counts = data['filiere'].value_counts()
+    plt.figure(figsize=(8, 8))
+    plt.pie(filiere_counts, labels=filiere_counts.index, autopct='%1.1f%%', startangle=140)
+    plt.title('Distribution of Energy Types (Filière)')
+    st.pyplot(plt)
+
+
+elif page == "Portfolio":
     st.title("About me")
     st.title("Hello, I\'m Thomas Masselles")
     st.image("./image_corrigee.jpg", width=200)
@@ -171,6 +189,7 @@ elif page == "About me":
     st.markdown("""
                 * email : thomas.masselles.78@gmail.com
                 * linkedin : [linkedin](https://www.linkedin.com/in/thomas-masselles/)
+                * cv : <a href="./CV_english_ver.pdf" target="_blank">Open PDF</a>
                 """, unsafe_allow_html=True)
     st.subheader("my projects:")
     st.markdown("""
