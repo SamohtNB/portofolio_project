@@ -139,9 +139,12 @@ elif page == "Data Visualization":
 
     
     st.subheader("let us check for the correlation between the columns containing numerical values:")
-    # present the correlation between the columns of the data with a heatmap
+    # present the correlation between the columns with numerical values
+    # of the data with a heatmap
+
+    numeric_data = data.select_dtypes(include=[np.number])
     plt.figure(figsize=(10, 5))
-    sns.heatmap(data.corr(), annot=True, cmap="viridis")
+    sns.heatmap(numeric_data.corr(), annot=True, cmap="viridis")
     st.pyplot(plt)
     
     st.subheader("let us check the distribution of the installed power by region:")
