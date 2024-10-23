@@ -8,4 +8,4 @@ requests
 folium
 streamlit_folium
 seaborn
-missigno
+missingno
