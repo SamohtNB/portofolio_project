@@ -31,12 +31,8 @@ data_url = "https://www.data.gouv.fr/fr/datasets/r/c14e5a7d-2ca6-4ad8-bc61-93889
 
 @st.cache_data
 def load_data():
-    file_path = "./cleaned_data.csv"
-    if os.path.exists(file_path):
-        data = pd.read_csv(file_path)
-    else:
-        data = pd.read_csv(data_url, sep=";", low_memory=False)
-        cleaned_data = clean_data(data)
+    data = pd.read_csv(data_url, sep=";", low_memory=False)
+    cleaned_data = clean_data(data)
     return cleaned_data
 
 st.sidebar.title("Menu")
